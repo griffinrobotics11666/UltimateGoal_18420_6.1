@@ -39,14 +39,22 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.hardware.bosch.BNO055IMU;
+
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 
-@Autonomous(name="Simple Autonomous", group="Linear Opmode")
+import java.util.List;
+
+@Autonomous(name="OD Simple Autonomous", group="Linear Opmode")
 //@Disabled
 public class SimpleAutonomous extends LinearOpMode {
     HardwareRobot robot = new HardwareRobot();
@@ -63,6 +71,13 @@ public class SimpleAutonomous extends LinearOpMode {
     static final double DRIVE_SPEED = 0.6;
     static final double TURN_SPEED = 0.5;
 
+    private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
+    private static final String LABEL_FIRST_ELEMENT = "Quad";
+    private static final String LABEL_SECOND_ELEMENT = "Single";
+    private static String likelyAssetDetected;
+
+
+
 
     @Override
     public void runOpMode() {
@@ -73,8 +88,83 @@ public class SimpleAutonomous extends LinearOpMode {
         robot.clawRotationServo.setPosition(0.68);
         robot.clawServo.setPosition(0.22);
         robot.shootyRotation.setPosition(0.89);
+
+        int noRingDetected = 0;
+        int quadDetected = 0;
+        int singleDetected = 0;
+        int counter = 0;
+
+        initVuforia();
+        initTfod();
+
+        if (robot.tfod != null) {
+            robot.tfod.activate();
+
+            // The TensorFlow software will scale the input images from the camera to a lower resolution.
+            // This can result in lower detection accuracy at longer distances (> 55cm or 22").
+            // If your target is at distance greater than 50 cm (20") you can adjust the magnification value
+            // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
+            // should be set to the value of the images used to create the TensorFlow Object Detection model
+            // (typically 1.78 or 16/9).
+
+            // Uncomment the following line if you want to adjust the magnification and/or the aspect ratio of the input images.
+            //tfod.setZoom(2.5, 1.78);
+        }
+
+
+
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
+
+        if (opModeIsActive()) {
+            while (opModeIsActive() && counter != 150) {
+                if (robot.tfod != null) {
+                    // getUpdatedRecognitions() will return null if no new information is available since
+                    // the last time that call was made.
+                    List<Recognition> updatedRecognitions = robot.tfod.getUpdatedRecognitions();
+                    if (updatedRecognitions != null) {
+                        telemetry.addData("# Object Detected", updatedRecognitions.size());
+                        // step through the list of recognitions and display boundary info.
+                        int i = 0;
+                        for (Recognition recognition : updatedRecognitions) {
+                            if(recognition.getLabel().equals("Single")){
+                                singleDetected++;
+                            } else if (recognition.getLabel().equals("Quad")){
+                                quadDetected++;
+                            } else if(updatedRecognitions.size() == 0){
+                                noRingDetected++;
+                            }
+                            telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
+                            telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
+                                    recognition.getLeft(), recognition.getTop());
+                            telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
+                                    recognition.getRight(), recognition.getBottom());
+                        }
+                        telemetry.update();
+                        counter++;
+                    }
+                }
+            }
+        }
+
+        if (robot.tfod != null) {
+            robot.tfod.shutdown();
+        }
+        if(singleDetected != 0 && singleDetected > quadDetected){
+            telemetry.addLine("single likely");
+            telemetry.update();
+            //likely single
+        } else if (quadDetected != 0 && quadDetected > singleDetected){
+            //likely quad
+            telemetry.addLine("quad likely");
+            telemetry.update();
+        } else {
+            //likely none
+            telemetry.addLine("none likely");
+            telemetry.update();
+        }
+
+        sleep(2000);
 
         //gyro stuff for turn()
         robot.imuControl.startAccelerationIntegration(new Position(), new Velocity(), 1000);
@@ -239,5 +329,35 @@ public class SimpleAutonomous extends LinearOpMode {
     public double readDoubleAngle() {
         angleControl = robot.imuControl.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
         return angleControl.firstAngle;
+    }
+
+    /**
+     * Initialize the Vuforia localization engine.
+     */
+    private void initVuforia() {
+        /*
+         * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
+         */
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
+        parameters.vuforiaLicenseKey = robot.VUFORIA_KEY;
+        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+
+        //  Instantiate the Vuforia engine
+        robot.vuforia = ClassFactory.getInstance().createVuforia(parameters);
+
+        // Loading trackables is not necessary for the TensorFlow Object Detection engine.
+    }
+
+    /**
+     * Initialize the TensorFlow Object Detection engine.
+     */
+    private void initTfod() {
+        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
+                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        tfodParameters.minResultConfidence = 0.8f;
+        robot.tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, robot.vuforia);
+        robot.tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
     }
 }

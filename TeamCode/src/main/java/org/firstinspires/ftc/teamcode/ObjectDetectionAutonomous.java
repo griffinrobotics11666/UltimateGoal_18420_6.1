@@ -254,9 +254,10 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
                     break;
                 }
                 case single: {
-                    encoderDrive(DRIVE_SPEED, 28, 20);
-                    turn(27, TURN_SPEED);
+                    encoderDrive(DRIVE_SPEED, 50, 20);
+                    turn(55, TURN_SPEED);
                     break;
+                    //TODO why are the numbers different on the code versus on the phone?
                 }
                 case quad: {
                     encoderDrive(DRIVE_SPEED, 52, 20);

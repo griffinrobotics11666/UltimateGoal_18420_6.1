@@ -255,7 +255,7 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
                 }
                 case single: {
                     encoderDrive(DRIVE_SPEED, 28, 20);
-                    turn(15, TURN_SPEED);
+                    turn(27, TURN_SPEED);
                     break;
                 }
                 case quad: {

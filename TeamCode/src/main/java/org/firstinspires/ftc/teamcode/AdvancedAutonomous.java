@@ -48,7 +48,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
 
 @Autonomous(name="Advanced Autonomous", group="Linear Opmode")
-//@Disabled
+@Disabled
 public class AdvancedAutonomous extends LinearOpMode {
     HardwareRobot robot = new HardwareRobot();
 

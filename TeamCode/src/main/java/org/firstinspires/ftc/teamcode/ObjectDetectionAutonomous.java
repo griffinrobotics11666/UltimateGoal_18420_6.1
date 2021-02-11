@@ -150,7 +150,7 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
         }
 
         if (opModeIsActive()) {
-            while (opModeIsActive() && counter != 150) {
+            while (opModeIsActive() && counter != 50) {
                 if (robot.tfod != null) {
                     // getUpdatedRecognitions() will return null if no new information is available since
                     // the last time that call was made.
@@ -243,28 +243,38 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
 
             //SHOOT THRICE
             shoot();
-            turn(3, TURN_SPEED);   //rotates the bot back to its original angle
-
-            //robot.clawRotationServo.setPosition(CLAW_ROTATION_SERVO_PICKUP);
-
-
             robot.shootyMotor.setPower(0);       //turn off the shooty motor
+
 
 
             switch(likelyAssetsDetected){
                 case none: {
-                    robot.clawServo.setPosition(CLAW_SERVO_OPEN_POS);
+                    turn(-8, TURN_SPEED);
+                    encoderDrive(DRIVE_SPEED, 7, 20);
+                    break;
                 }
                 case single: {
-                    robot.clawServo.setPosition(CLAW_SERVO_OPEN_POS);
+                    encoderDrive(DRIVE_SPEED, 28, 20);
+                    turn(15, TURN_SPEED);
+                    break;
                 }
                 case quad: {
-                    robot.clawServo.setPosition(CLAW_SERVO_OPEN_POS);
+                    encoderDrive(DRIVE_SPEED, 52, 20);
+                    turn(-5, TURN_SPEED);
+                    break;
                 }
             }
-            sleep(3000);
+            sleep(1000);
 
             //moves the arm motor back up
+            robot.armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            robot.armMotor.setTargetPosition(3000);
+            robot.armMotor.setPower(1);
+
+
+            robot.clawServo.setPosition(CLAW_SERVO_OPEN_POS);
+
+
             robot.armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             robot.armMotor.setTargetPosition(0);
             robot.armMotor.setPower(1);
@@ -274,13 +284,8 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
             robot.shootyBoi.setPosition(SHOOTY_BOI_SERVO_LOAD_POS);
             robot.shootyRotation.setPosition(SHOOTY_ROTATION_FLAT_POS); //returns the shooting platform to its normal flat position
         }
-
-        encoderDrive(DRIVE_SPEED, 30, 30);  //todo whats this?
-
         telemetry.addData("Path", "Complete");
-
         telemetry.update();
-
     }
 
     /*

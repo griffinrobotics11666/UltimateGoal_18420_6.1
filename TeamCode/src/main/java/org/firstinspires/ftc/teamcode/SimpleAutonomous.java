@@ -55,7 +55,7 @@ import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import java.util.List;
 
 @Autonomous(name="OD Simple Autonomous", group="Linear Opmode")
-//@Disabled
+@Disabled
 public class SimpleAutonomous extends LinearOpMode {
     HardwareRobot robot = new HardwareRobot();
 

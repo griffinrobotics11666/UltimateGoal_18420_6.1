@@ -219,13 +219,13 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
             if (robot.armMotor.getCurrentPosition() >= 2900) {
                 robot.armMotor.setPower(0.0);
             }
-
+            robot.shootyMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             robot.shootyMotor.setPower(0.59);       //turn on the shooty motor
 
             robot.shootyRotation.setPosition(SHOOTY_ROTATION_LAUNCH);    //sets the shooting platform to the high angle
             robot.clawRotationServo.setPosition(CLAW_ROTATION_SERVO_PICKUP);
 
-            turn(-3, TURN_SPEED);  //turns left (make positive if turns right) 10 degrees todo test this with different values to find the best one to hit the first target
+            //turn(-3, TURN_SPEED);  //turns left (make positive if turns right) 10 degrees todo test this with different values to find the best one to hit the first target
             sleep(5500); //small delay so things dont happen too quickly, adjust time and add/remove more if needed
 
             //SHOOT ONCE
@@ -249,41 +249,60 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
 
             switch(likelyAssetsDetected){
                 case none: {
-                    turn(-8, TURN_SPEED);
+                    turn(-11, TURN_SPEED);
                     encoderDrive(DRIVE_SPEED, 7, 20);
                     break;
                 }
                 case single: {
-                    encoderDrive(DRIVE_SPEED, 50, 20);
-                    turn(55, TURN_SPEED);
+                    encoderDrive(DRIVE_SPEED, 43, 20);
+                    turn(52, TURN_SPEED);
                     break;
                     //TODO why are the numbers different on the code versus on the phone?
                 }
                 case quad: {
                     encoderDrive(DRIVE_SPEED, 52, 20);
-                    turn(-5, TURN_SPEED);
+                    turn(-8, TURN_SPEED);
                     break;
                 }
             }
-            sleep(1000);
+            sleep(500);
 
             //moves the arm motor back up
+            robot.armMotor.setTargetPosition(3500);
             robot.armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            robot.armMotor.setTargetPosition(3000);
             robot.armMotor.setPower(1);
 
+            sleep(500);
 
             robot.clawServo.setPosition(CLAW_SERVO_OPEN_POS);
+            sleep(750);
 
-
-            robot.armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             robot.armMotor.setTargetPosition(0);
+            robot.armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             robot.armMotor.setPower(1);
             if (!robot.touchyKid.getState()) {
-                robot.armMotor.setPower(0.0);
+                robot.armMotor.setPower(0);
             }
             robot.shootyBoi.setPosition(SHOOTY_BOI_SERVO_LOAD_POS);
             robot.shootyRotation.setPosition(SHOOTY_ROTATION_FLAT_POS); //returns the shooting platform to its normal flat position
+
+            switch(likelyAssetsDetected){
+                case none: {
+                    encoderDrive(DRIVE_SPEED, 22, 20);
+                    break;
+                }
+                case single: {
+                    encoderDrive(DRIVE_SPEED, -21, 20);
+                    break;
+                }
+                case quad: {
+                    //encoderDrive(DRIVE_SPEED, 52, 20);
+                    break;
+                }
+            }
+            while(robot.armMotor.isBusy() || robot.frontLeftDrive.isBusy()){
+                //do nothing
+            }
         }
         telemetry.addData("Path", "Complete");
         telemetry.update();

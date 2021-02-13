@@ -86,8 +86,8 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
     static final double DRIVE_GEAR_REDUCTION = 2.0;     // This is < 1.0 if geared UP
     static final double WHEEL_DIAMETER_INCHES = 4.0;     // For figuring circumference
     static final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) / (WHEEL_DIAMETER_INCHES * 3.1415);
-    static final double DRIVE_SPEED = 0.6;
-    static final double TURN_SPEED = 0.5;
+    static final double DRIVE_SPEED = 0.8;
+    static final double TURN_SPEED = 0.7;
 
 
     @Override
@@ -122,7 +122,7 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
         robot.shootyRotation.setPosition(0.89);
 
 
-        telemetry.addData("Shooty Launch Rotation pos", SHOOTY_ROTATION_LAUNCH);
+        //telemetry.addData("Shooty Launch Rotation pos", SHOOTY_ROTATION_LAUNCH);
         telemetry.addData("voltage", robot.voltage.getVoltage());
         telemetry.update();
 
@@ -199,14 +199,16 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
         }
 
         turn(-20, TURN_SPEED);
+        robot.shootyMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.shootyMotor.setPower(0.45);       //turn on the shooty motor
 
 
         //gyro stuff for turn()
         robot.imuControl.startAccelerationIntegration(new Position(), new Velocity(), 1000);
         robot.imuExpansion.startAccelerationIntegration(new Position(), new Velocity(), 1000);
-        sleep(2000); //TODO maybe take out?
 
         encoderDrive(DRIVE_SPEED, 42, 30);      //moves the robot forward 24 inches todo change this to the distance we want it to move forward when shooting
+        turn(-3, TURN_SPEED);
 
         if (!robot.touchyKid.getState()) {   //checks if limit switch is closed - basically a safety. WILL NOT RUN if arm does not start fully up
 
@@ -219,27 +221,23 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
             if (robot.armMotor.getCurrentPosition() >= 2900) {
                 robot.armMotor.setPower(0.0);
             }
-            robot.shootyMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            robot.shootyMotor.setPower(0.59);       //turn on the shooty motor
 
             robot.shootyRotation.setPosition(SHOOTY_ROTATION_LAUNCH);    //sets the shooting platform to the high angle
             robot.clawRotationServo.setPosition(CLAW_ROTATION_SERVO_PICKUP);
 
             //turn(-3, TURN_SPEED);  //turns left (make positive if turns right) 10 degrees todo test this with different values to find the best one to hit the first target
-            sleep(5500); //small delay so things dont happen too quickly, adjust time and add/remove more if needed
 
             //SHOOT ONCE
-            shoot();    //see method below
-            sleep(1500);
-            robot.shootyRotation.setPosition(SHOOTY_ROTATION_LAUNCH);
             sleep(1000);
+            shoot();
+            sleep(1500);
+
 
 
             //SHOOT TWICE
             shoot();
             sleep(1500);
-            robot.shootyRotation.setPosition(SHOOTY_ROTATION_LAUNCH);
-            sleep(1000);
+
 
             //SHOOT THRICE
             shoot();
@@ -249,33 +247,34 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
 
             switch(likelyAssetsDetected){
                 case none: {
-                    turn(-11, TURN_SPEED);
+                    turn(-8, TURN_SPEED);
                     encoderDrive(DRIVE_SPEED, 7, 20);
                     break;
                 }
                 case single: {
                     encoderDrive(DRIVE_SPEED, 43, 20);
-                    turn(52, TURN_SPEED);
+                    turn(55, TURN_SPEED);
                     break;
                     //TODO why are the numbers different on the code versus on the phone?
                 }
                 case quad: {
                     encoderDrive(DRIVE_SPEED, 52, 20);
-                    turn(-8, TURN_SPEED);
+                    turn(-7, TURN_SPEED);
                     break;
                 }
             }
             sleep(500);
 
-            //moves the arm motor back up
-            robot.armMotor.setTargetPosition(3500);
-            robot.armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            robot.armMotor.setPower(1);
+//            //moves the arm motor down more
+//            robot.armMotor.setTargetPosition(3500);
+//            robot.armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//            robot.armMotor.setPower(1);
+            robot.clawRotationServo.setPosition(0.2);
 
             sleep(500);
 
             robot.clawServo.setPosition(CLAW_SERVO_OPEN_POS);
-            sleep(750);
+            sleep(500);
 
             robot.armMotor.setTargetPosition(0);
             robot.armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -288,15 +287,18 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
 
             switch(likelyAssetsDetected){
                 case none: {
+                    sleep(500);
+                    turn(38, TURN_SPEED);
                     encoderDrive(DRIVE_SPEED, 22, 20);
                     break;
                 }
                 case single: {
-                    encoderDrive(DRIVE_SPEED, -21, 20);
+                    turn(-52, TURN_SPEED);
+                    encoderDrive(DRIVE_SPEED, -16, 20);
                     break;
                 }
                 case quad: {
-                    //encoderDrive(DRIVE_SPEED, 52, 20);
+                    encoderDrive(DRIVE_SPEED, -21, 20);
                     break;
                 }
             }
@@ -416,6 +418,11 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
     }
 
     public void turn(double turnAngle, double speed) {
+        robot.frontLeftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        robot.frontRightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        robot.rearLeftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        robot.rearRightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         double currentAngle = readDoubleAngle();
         double lastAngle = currentAngle;
         double deltaAngle = 0;

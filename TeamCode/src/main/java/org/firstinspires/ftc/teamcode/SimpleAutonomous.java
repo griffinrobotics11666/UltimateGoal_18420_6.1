@@ -35,6 +35,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
@@ -54,13 +55,30 @@ import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 
 import java.util.List;
 
-@Autonomous(name="OD Simple Autonomous", group="Linear Opmode")
-@Disabled
+@Autonomous(name="Simple Shooting Autonomous", group="Linear Opmode")
+//@Disabled
 public class SimpleAutonomous extends LinearOpMode {
     HardwareRobot robot = new HardwareRobot();
 
     Orientation angleExpansion;
     Orientation angleControl;
+
+
+    boolean isRoofRaised = true;
+    private static final double SHOOTY_BOI_SERVO_SHOOT_POS     =  0.64;
+    private static final double SHOOTY_BOI_SERVO_LOAD_POS     =  0.47;
+    private static final double SHOOTY_ROTATION_FLAT_POS     =  0.64;
+    private static double SHOOTY_ROTATION_LAUNCH = 0.13;
+    private static final double CLAW_ROTATION_SERVO_PICKUP     =  0.35;
+    private static final double CLAW_ROTATION_SERVO_DROP     =  0.49;
+    private static final double CLAW_SERVO_OPEN_POS     =  0.35;
+    private static final double CLAW_SERVO_CLOSE_POS     =  0.55;
+
+    private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
+    private static final String LABEL_FIRST_ELEMENT = "Quad";
+    private static final String LABEL_SECOND_ELEMENT = "Single";
+    private enum likelyAssetsDetected{quad, single, none};
+    private static likelyAssetsDetected likelyAssetsDetected;
 
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -71,13 +89,6 @@ public class SimpleAutonomous extends LinearOpMode {
     static final double DRIVE_SPEED = 0.6;
     static final double TURN_SPEED = 0.5;
 
-    private static final String TFOD_MODEL_ASSET = "UltimateGoal.tflite";
-    private static final String LABEL_FIRST_ELEMENT = "Quad";
-    private static final String LABEL_SECOND_ELEMENT = "Single";
-    private static String likelyAssetDetected;
-
-
-
 
     @Override
     public void runOpMode() {
@@ -85,97 +96,95 @@ public class SimpleAutonomous extends LinearOpMode {
 
         telemetry.addData("Status", "Ready");
         telemetry.update();
-        robot.clawRotationServo.setPosition(0.68);
-        robot.clawServo.setPosition(0.22);
+//        robot.clawRotationServo.setPosition(0.68);
+//        robot.clawServo.setPosition(0.22);
         robot.shootyRotation.setPosition(0.89);
 
-        int noRingDetected = 0;
-        int quadDetected = 0;
-        int singleDetected = 0;
-        int counter = 0;
 
-        initVuforia();
-        initTfod();
-
-        if (robot.tfod != null) {
-            robot.tfod.activate();
-
-            // The TensorFlow software will scale the input images from the camera to a lower resolution.
-            // This can result in lower detection accuracy at longer distances (> 55cm or 22").
-            // If your target is at distance greater than 50 cm (20") you can adjust the magnification value
-            // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
-            // should be set to the value of the images used to create the TensorFlow Object Detection model
-            // (typically 1.78 or 16/9).
-
-            // Uncomment the following line if you want to adjust the magnification and/or the aspect ratio of the input images.
-            //tfod.setZoom(2.5, 1.78);
-        }
-
-
+        //telemetry.addData("Shooty Launch Rotation pos", SHOOTY_ROTATION_LAUNCH);
+        telemetry.addData("voltage", robot.voltage.getVoltage());
+        telemetry.update();
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
-        if (opModeIsActive()) {
-            while (opModeIsActive()) {
-                if (robot.tfod != null) {
-                    // getUpdatedRecognitions() will return null if no new information is available since
-                    // the last time that call was made.
-                    List<Recognition> updatedRecognitions = robot.tfod.getUpdatedRecognitions();
-                    if (updatedRecognitions != null) {
-                        telemetry.addData("# Object Detected", updatedRecognitions.size());
-                        // step through the list of recognitions and display boundary info.
-                        int i = 0;
-                        for (Recognition recognition : updatedRecognitions) {
-                            if(recognition.getLabel().equals("Single")){
-                                singleDetected++;
-                            } else if (recognition.getLabel().equals("Quad")){
-                                quadDetected++;
-                            } else if(updatedRecognitions.size() == 0){
-                                noRingDetected++;
-                            }
-                            telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
-                            telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
-                                    recognition.getLeft(), recognition.getTop());
-                            telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
-                                    recognition.getRight(), recognition.getBottom());
-                        }
-                        telemetry.update();
-                        counter++;
-                    }
-                }
-            }
-        }
 
-        if (robot.tfod != null) {
-            robot.tfod.shutdown();
+        if(robot.voltage.getVoltage() > 13.8){
+            SHOOTY_ROTATION_LAUNCH = 0.15;
+        } else if (robot.voltage.getVoltage() > 13.5){
+            SHOOTY_ROTATION_LAUNCH = 0.14;
+        } else if(robot.voltage.getVoltage() > 13.15){
+            SHOOTY_ROTATION_LAUNCH = 0.13;
+        } else if(robot.voltage.getVoltage() > 12.9){
+            SHOOTY_ROTATION_LAUNCH = 0.12;
+        } else if(robot.voltage.getVoltage() > 12.78){
+            SHOOTY_ROTATION_LAUNCH = 0.11;
+        } else if(robot.voltage.getVoltage() >= 12.65){
+            SHOOTY_ROTATION_LAUNCH = 0.10;
+        } else if(robot.voltage.getVoltage() < 12.65){
+            SHOOTY_ROTATION_LAUNCH = 0.09;
         }
-        if(singleDetected != 0 && singleDetected > quadDetected){
-            telemetry.addLine("single likely");
-            telemetry.update();
-            //likely single
-        } else if (quadDetected != 0 && quadDetected > singleDetected){
-            //likely quad
-            telemetry.addLine("quad likely");
-            telemetry.update();
-        } else {
-            //likely none
-            telemetry.addLine("none likely");
-            telemetry.update();
-        }
-
-        sleep(6000);
 
         //gyro stuff for turn()
         robot.imuControl.startAccelerationIntegration(new Position(), new Velocity(), 1000);
         robot.imuExpansion.startAccelerationIntegration(new Position(), new Velocity(), 1000);
+        //turn(3, TURN_SPEED);
+        sleep(2000); //TODO maybe take out?
 
+        //encoderDrive(DRIVE_SPEED, 42, 30);      //moves the robot forward 24 inches todo change this to the distance we want it to move forward when shooting
+
+           //checks if limit switch is closed - basically a safety. WILL NOT RUN if arm does not start fully up
+
+            //lowers arm
+//            robot.armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//            robot.armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//            robot.armMotor.setTargetPosition(2900);
+//            robot.armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//            robot.armMotor.setPower(1);
+//            if (robot.armMotor.getCurrentPosition() >= 2900) {
+//                robot.armMotor.setPower(0.0);
+//            }
+
+            robot.shootyMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            robot.shootyMotor.setPower(0.48);       //turn on the shooty motor
+
+            robot.shootyRotation.setPosition(SHOOTY_ROTATION_LAUNCH);    //sets the shooting platform to the high angle
+            robot.clawRotationServo.setPosition(CLAW_ROTATION_SERVO_PICKUP);
+
+            //turn(-3, TURN_SPEED);  //turns left (make positive if turns right) 10 degrees todo test this with different values to find the best one to hit the first target
+            sleep(5500); //small delay so things dont happen too quickly, adjust time and add/remove more if needed
+
+            //SHOOT ONCE
+            shoot();    //see method below
+            sleep(2500);
+
+
+            //SHOOT TWICE
+            shoot();
+            sleep(2500);
+
+            //SHOOT THRICE
+            shoot();
+            robot.shootyMotor.setPower(0);       //turn off the shooty motor
+            sleep(2000);
+
+//            robot.armMotor.setTargetPosition(0);
+//            robot.armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//            robot.armMotor.setPower(1);
+//            if (!robot.touchyKid.getState()) {
+//                robot.armMotor.setPower(0);
+//            }
+//            robot.shootyBoi.setPosition(SHOOTY_BOI_SERVO_LOAD_POS);
+//            robot.shootyRotation.setPosition(SHOOTY_ROTATION_FLAT_POS); //returns the shooting platform to its normal flat position
+//
+//
+//            while(robot.armMotor.isBusy() || robot.frontLeftDrive.isBusy()){
+//                //do nothing
+//            }
+
+        telemetry.addData("Path", "Complete");
+        telemetry.update();
     }
-
-
-
-
-
 
     /*
      *  Method to perform a relative move, based on encoder counts.
@@ -273,6 +282,17 @@ public class SimpleAutonomous extends LinearOpMode {
         }
     }
 
+    public void shoot(){    //code taken from driver control
+        robot.shootyBoi.setPosition(SHOOTY_BOI_SERVO_SHOOT_POS);
+        double pressTime = runtime.milliseconds();
+        while(runtime.milliseconds()-pressTime < 250){  //wait until the shooty servo has fully moves forward.
+            telemetry.addData("Wait " ,"true");
+            telemetry.update();
+        }
+        robot.shootyBoi.setPosition(SHOOTY_BOI_SERVO_LOAD_POS);
+
+    }
+
     public void turn(double turnAngle, double speed) {
         double currentAngle = readDoubleAngle();
         double lastAngle = currentAngle;
@@ -281,35 +301,44 @@ public class SimpleAutonomous extends LinearOpMode {
         if (Math.abs(deltaAngle) >= 180) {
             deltaAngle = currentAngle + lastAngle;
         }
-        double increment = .5;
-        double power = 0;
+        double increment = .001;
+        double power = 0.1;
         while (opModeIsActive() && Math.abs(turnAngle - totalAngle) > .1) {
+            currentAngle = readDoubleAngle();
             deltaAngle = currentAngle - lastAngle;
             totalAngle += deltaAngle;
-            currentAngle = readDoubleAngle();
+            //missing changing lastAngle
+            lastAngle = currentAngle;
             power += increment;
+
+            if (Math.abs(turnAngle - totalAngle) < 20) {
+                increment = Math.abs(increment) * -1;
+            }
 
             if (power > speed){
                 power = speed;
             }
-            else if (power < (-1)){
-                power = -1;
+            else if (power < .1){
+                power = .1;
             }
-            if (turnAngle > 0){
-                robot.frontLeftDrive.setPower(-power);
-                robot.frontRightDrive.setPower(power);
-                robot.rearLeftDrive.setPower(-power);
-                robot.rearRightDrive.setPower(power);
-            } else {
+            if (turnAngle-totalAngle > 0){
                 robot.frontLeftDrive.setPower(power);
                 robot.frontRightDrive.setPower(-power);
                 robot.rearLeftDrive.setPower(power);
                 robot.rearRightDrive.setPower(-power);
+            } else {
+                robot.frontLeftDrive.setPower(-power);
+                robot.frontRightDrive.setPower(power);
+                robot.rearLeftDrive.setPower(-power);
+                robot.rearRightDrive.setPower(power);
             }
+            telemetry.addData("total angle", totalAngle);
+            telemetry.addData("delta angle", deltaAngle);
+            telemetry.addData("last angle", lastAngle);
+            telemetry.addData("current angle", currentAngle);
+            telemetry.update();
 
-            if(Math.abs(totalAngle) > Math.abs(turnAngle)){
-                increment = increment * (-0.5);
-            }
+
         }
         robot.frontLeftDrive.setPower (0);
         robot.frontRightDrive.setPower(0);

@@ -228,15 +228,15 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
             //turn(-3, TURN_SPEED);  //turns left (make positive if turns right) 10 degrees todo test this with different values to find the best one to hit the first target
 
             //SHOOT ONCE
-            sleep(1000);
-            shoot();
             sleep(1500);
+            shoot();
+            sleep(1250);
 
 
 
             //SHOOT TWICE
             shoot();
-            sleep(1500);
+            sleep(1250);
 
 
             //SHOOT THRICE

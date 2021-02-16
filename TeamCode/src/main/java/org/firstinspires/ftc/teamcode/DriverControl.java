@@ -82,7 +82,7 @@ public class DriverControl extends OpMode {
     boolean inPickupPos = true, isXchanged;
     int shootyRotationCount = 0;
     boolean isUpChanged, isDownChanged;
-    boolean isOpen = true, isOpenChanged = false;
+    boolean isOpen = false, isOpenChanged = false;
     boolean isRoofRaised = true, isYchanged= false; // true: arm is up, false: arm is down
     boolean shootyIsRunning = false, shootyIsRunningChanged = false;
     boolean isShooting = false, shootyIsShootingChanged = false;
@@ -98,8 +98,8 @@ public class DriverControl extends OpMode {
     double frontRightPower;
 
     //SETS MAX AND MIN POSITIONS FOR SERVOS
-    private static final double CLAW_SERVO_OPEN_POS     =  0.55;
-    private static final double CLAW_SERVO_CLOSE_POS     =  0.35;
+    private static final double CLAW_SERVO_OPEN_POS     =  0.35;
+    private static final double CLAW_SERVO_CLOSE_POS     =  0.22;
 
     private static final double SHOOTY_ROTATION_FLAT_POS     =  0.64;
     private static final double SHOOTY_ROTATION_LAUNCH_LOW     =  0.19;
@@ -137,7 +137,9 @@ public class DriverControl extends OpMode {
         robot.frontLeftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         robot.frontRightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        robot.shootyMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        robot.shootyMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);  //change speed if taking this out
+
         //set arm Motor to run with encoder
         robot.armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         robot.armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -145,7 +147,7 @@ public class DriverControl extends OpMode {
 
         robot.shootyBoi.setPosition(SHOOTY_BOI_SERVO_LOAD_POS);
         robot.clawRotationServo.setPosition(0.68);
-        robot.clawServo.setPosition(0.35);
+        robot.clawServo.setPosition(CLAW_SERVO_CLOSE_POS);
         robot.shootyRotation.setPosition(0.89);
 
 
@@ -318,7 +320,7 @@ public class DriverControl extends OpMode {
             }
 
             if (gamepad1.start && !shootyIsRunningChanged) {   //toggles turning on and off shooty motor
-                robot.shootyMotor.setPower(shootyIsRunning ? 0 : 0.59);
+                robot.shootyMotor.setPower(shootyIsRunning ? 0 : 0.45);  //without encoders speed 0.59
                 shootyIsRunning = !shootyIsRunning;
                 shootyIsRunningChanged = true;
             } else if (!gamepad1.start) {
@@ -474,7 +476,7 @@ public class DriverControl extends OpMode {
             telemetry.addData("Current Angle", readDoubleAngle());
 
             if(gamepad1.start && !shootyIsRunningChanged){   //toggles turning on and off shooty motor
-                robot.shootyMotor.setPower(shootyIsRunning ? 0 : 0.59);
+                robot.shootyMotor.setPower(shootyIsRunning ? 0 : 0.45); //without encoders speed 0.59
                 shootyIsRunning = !shootyIsRunning;
                 shootyIsRunningChanged = true;
             } else if (!gamepad1.start) {

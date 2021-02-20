@@ -202,6 +202,19 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
         robot.shootyMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         robot.shootyMotor.setPower(0.45);       //turn on the shooty motor
 
+        //lowers arm
+        robot.armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.armMotor.setTargetPosition(2900);
+        robot.armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.armMotor.setPower(1);
+        if (robot.armMotor.getCurrentPosition() >= 2900) {
+            robot.armMotor.setPower(0.0);
+        }
+
+        robot.shootyRotation.setPosition(SHOOTY_ROTATION_LAUNCH);    //sets the shooting platform to the high angle
+        robot.clawRotationServo.setPosition(CLAW_ROTATION_SERVO_PICKUP);
+
 
         //gyro stuff for turn()
         robot.imuControl.startAccelerationIntegration(new Position(), new Velocity(), 1000);
@@ -210,20 +223,8 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
         encoderDrive(DRIVE_SPEED, 42, 30);      //moves the robot forward 24 inches todo change this to the distance we want it to move forward when shooting
         turn(-3, TURN_SPEED);
 
-        if (!robot.touchyKid.getState()) {   //checks if limit switch is closed - basically a safety. WILL NOT RUN if arm does not start fully up
 
-            //lowers arm
-            robot.armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            robot.armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            robot.armMotor.setTargetPosition(2900);
-            robot.armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            robot.armMotor.setPower(1);
-            if (robot.armMotor.getCurrentPosition() >= 2900) {
-                robot.armMotor.setPower(0.0);
-            }
 
-            robot.shootyRotation.setPosition(SHOOTY_ROTATION_LAUNCH);    //sets the shooting platform to the high angle
-            robot.clawRotationServo.setPosition(CLAW_ROTATION_SERVO_PICKUP);
 
             //turn(-3, TURN_SPEED);  //turns left (make positive if turns right) 10 degrees todo test this with different values to find the best one to hit the first target
 
@@ -305,7 +306,7 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
             while(robot.armMotor.isBusy() || robot.frontLeftDrive.isBusy()){
                 //do nothing
             }
-        }
+
         telemetry.addData("Path", "Complete");
         telemetry.update();
     }

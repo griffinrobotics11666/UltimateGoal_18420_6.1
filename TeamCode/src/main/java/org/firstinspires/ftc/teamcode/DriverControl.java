@@ -138,7 +138,7 @@ public class DriverControl extends OpMode {
         robot.frontRightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
 
-        robot.shootyMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);  //change speed if taking this out
+        //robot.shootyMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);  //change speed if taking this out
 
         //set arm Motor to run with encoder
         robot.armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -320,7 +320,7 @@ public class DriverControl extends OpMode {
             }
 
             if (gamepad1.start && !shootyIsRunningChanged) {   //toggles turning on and off shooty motor
-                robot.shootyMotor.setPower(shootyIsRunning ? 0 : 0.45);  //without encoders speed 0.59
+                robot.shootyMotor.setPower(shootyIsRunning ? 0 : 0.45);  //with encoders speed 0.45 TODO
                 shootyIsRunning = !shootyIsRunning;
                 shootyIsRunningChanged = true;
             } else if (!gamepad1.start) {
@@ -476,7 +476,7 @@ public class DriverControl extends OpMode {
             telemetry.addData("Current Angle", readDoubleAngle());
 
             if(gamepad1.start && !shootyIsRunningChanged){   //toggles turning on and off shooty motor
-                robot.shootyMotor.setPower(shootyIsRunning ? 0 : 0.45); //without encoders speed 0.59
+                robot.shootyMotor.setPower(shootyIsRunning ? 0 : 0.45); //with encoders speed 0.45 TODO
                 shootyIsRunning = !shootyIsRunning;
                 shootyIsRunningChanged = true;
             } else if (!gamepad1.start) {

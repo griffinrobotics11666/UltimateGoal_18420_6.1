@@ -86,7 +86,7 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
     static final double DRIVE_GEAR_REDUCTION = 2.0;     // This is < 1.0 if geared UP
     static final double WHEEL_DIAMETER_INCHES = 4.0;     // For figuring circumference
     static final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) / (WHEEL_DIAMETER_INCHES * 3.1415);
-    static final double DRIVE_SPEED = 0.8;
+    static final double DRIVE_SPEED = 1;
     static final double TURN_SPEED = 0.7;
 
 
@@ -134,19 +134,19 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
 
 
         if(robot.voltage.getVoltage() > 13.8){
-            SHOOTY_ROTATION_LAUNCH = 0.15;
-        } else if (robot.voltage.getVoltage() > 13.5){
-            SHOOTY_ROTATION_LAUNCH = 0.14;
-        } else if(robot.voltage.getVoltage() > 13.15){
             SHOOTY_ROTATION_LAUNCH = 0.13;
-        } else if(robot.voltage.getVoltage() > 12.9){
+        } else if (robot.voltage.getVoltage() > 13.5){
             SHOOTY_ROTATION_LAUNCH = 0.12;
-        } else if(robot.voltage.getVoltage() > 12.78){
+        } else if(robot.voltage.getVoltage() > 13.15){
             SHOOTY_ROTATION_LAUNCH = 0.11;
-        } else if(robot.voltage.getVoltage() >= 12.65){
+        } else if(robot.voltage.getVoltage() > 12.9){
             SHOOTY_ROTATION_LAUNCH = 0.10;
-        } else if(robot.voltage.getVoltage() < 12.65){
+        } else if(robot.voltage.getVoltage() > 12.78){
             SHOOTY_ROTATION_LAUNCH = 0.09;
+        } else if(robot.voltage.getVoltage() >= 12.65){
+            SHOOTY_ROTATION_LAUNCH = 0.08;
+        } else if(robot.voltage.getVoltage() < 12.65){
+            SHOOTY_ROTATION_LAUNCH = 0.07;
         }
 
         if (opModeIsActive()) {
@@ -199,8 +199,8 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
         }
 
         turn(-20, TURN_SPEED);
-        robot.shootyMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        robot.shootyMotor.setPower(0.45);       //turn on the shooty motor
+        robot.shootyMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.shootyMotor.setPower(0.6);       //turn on the shooty motor
 
         //lowers arm
         robot.armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -231,17 +231,22 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
             //SHOOT ONCE
             sleep(1500);
             shoot();
-            sleep(1250);
+            sleep(1500);
 
 
 
             //SHOOT TWICE
             shoot();
-            sleep(1250);
+            sleep(1500);
 
 
             //SHOOT THRICE
             shoot();
+            //extra shot, just in case it misses last one
+            sleep(750);
+
+
+        shoot();
             robot.shootyMotor.setPower(0);       //turn off the shooty motor
 
 
@@ -369,7 +374,7 @@ public class ObjectDetectionAutonomous extends LinearOpMode {
 
 
             //if one of these is false, the loop will exit and will continue to set power for all wheels to 0
-            while (opModeIsActive() && (runtime.seconds() < timeoutS) && robot.frontLeftDrive.isBusy() && robot.frontRightDrive.isBusy() && robot.rearLeftDrive.isBusy() && robot.rearRightDrive.isBusy()) {
+            while (opModeIsActive() && (runtime.seconds() < timeoutS) && robot.frontLeftDrive.isBusy()){
 
                 if(robot.frontLeftDrive.getCurrentPosition() < encoderTarget/2){   //accelerate in the positive direction
                     currentSpeed += 0.01;
